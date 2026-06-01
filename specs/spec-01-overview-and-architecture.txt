@@ -1,0 +1,121 @@
+================================================================
+GENIUSTUDY ASSISTANT — SPEC 01: PROJECT OVERVIEW & ARCHITECTURE
+================================================================
+
+PROJECT NAME: GeniuStudy
+TAGLINE: Your immersive AI-powered study companion
+STACK: React 18 + TypeScript + Vite, Shadcn/UI, Lucide React, Supabase
+
+----------------------------------------------------------------
+1. PURPOSE
+----------------------------------------------------------------
+GeniuStudy is a full-featured, immersive study assistant web app
+that allows students and learners to:
+  - Upload or paste their study material (PDF, PPTX, DOCX, TXT)
+  - View formatted, readable notes in a distraction-free reader
+  - Have notes read aloud with selectable AI/browser voices
+  - Study with ambient acoustic background sounds (lo-fi, rain, etc.)
+  - Generate AI-powered summaries, flashcards, and quizzes
+  - Track their study sessions and progress via Supabase
+
+----------------------------------------------------------------
+2. TECH STACK
+----------------------------------------------------------------
+Frontend:
+  - React 18 (with hooks, context, lazy loading)
+  - TypeScript (strict mode)
+  - Vite (build tool)
+  - Tailwind CSS (utility styling)
+  - Shadcn/UI (component library — Button, Card, Dialog, Tabs,
+      Slider, Select, Progress, Tooltip, Badge, etc.)
+  - Lucide React (all icons)
+  - React Router v6 (routing)
+
+Backend / Auth / DB:
+  - Supabase (PostgreSQL DB, Auth, Storage, Realtime)
+  - Supabase Storage (for uploaded files)
+  - Supabase Auth (email/password + Google OAuth)
+
+AI Integration:
+  - Anthropic Claude API (summaries, flashcards, quiz generation)
+  - Web Speech API (text-to-speech, voice selection)
+
+File Parsing (client-side):
+  - pdfjs-dist (PDF text extraction)
+  - mammoth.js (DOCX to HTML/text)
+  - pptx2json or similar (PPTX text extraction)
+  - Plain text: native
+
+----------------------------------------------------------------
+3. APP ARCHITECTURE
+----------------------------------------------------------------
+
+/src
+  /app
+    App.tsx                  — Root with router, providers
+    router.tsx               — Route definitions
+  /components
+    /ui                      — Shadcn/UI re-exports
+    /layout
+      AppShell.tsx           — Sidebar + main content wrapper
+      Sidebar.tsx            — Navigation sidebar
+      TopBar.tsx             — Top navigation bar
+    /reader
+      NoteReader.tsx         — Formatted document display
+      ReaderToolbar.tsx      — TTS controls, font size, theme
+    /uploader
+      FileUploader.tsx       — Drag-and-drop + file picker
+      PasteNotes.tsx         — Textarea for pasting notes
+    /audio
+      AmbientPlayer.tsx      — Background sound controls
+      VoiceSelector.tsx      — TTS voice picker
+      TTSController.tsx      — Play/pause/stop, speed, pitch
+    /ai
+      SummaryPanel.tsx       — AI-generated summary
+      FlashcardDeck.tsx      — Flashcard study mode
+      QuizMode.tsx           — AI quiz with scoring
+    /dashboard
+      StudyStats.tsx         — Sessions, time, streaks
+      DocumentList.tsx       — Saved documents list
+  /hooks
+    useTextToSpeech.ts       — TTS logic hook
+    useAmbientAudio.ts       — Ambient sound hook
+    useFileParser.ts         — File parsing logic
+    useStudySession.ts       — Timer + session tracking
+    useAI.ts                 — Claude API calls hook
+  /lib
+    supabase.ts              — Supabase client init
+    claude.ts                — Anthropic API helper
+    fileParser.ts            — File parsing utilities
+    audioUtils.ts            — Audio helpers
+  /pages
+    Landing.tsx              — Marketing / intro page
+    Auth.tsx                 — Login / signup
+    Dashboard.tsx            — User home + docs list
+    Studio.tsx               — Main study workspace
+    Settings.tsx             — Voice, theme, preferences
+  /store
+    useAppStore.ts           — Zustand global state
+  /types
+    index.ts                 — Shared TypeScript types
+
+----------------------------------------------------------------
+4. ENVIRONMENT VARIABLES
+----------------------------------------------------------------
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+VITE_ANTHROPIC_API_KEY=
+
+----------------------------------------------------------------
+5. SUPABASE TABLES (overview — see spec-03 for full schema)
+----------------------------------------------------------------
+  - profiles          (user profile data)
+  - documents         (uploaded/pasted study docs)
+  - study_sessions    (timer-tracked study sessions)
+  - flashcards        (AI-generated per document)
+  - quiz_results      (quiz scores per document)
+  - user_preferences  (voice, ambient, theme settings)
+
+================================================================
+END OF SPEC 01
+================================================================

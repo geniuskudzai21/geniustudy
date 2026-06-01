@@ -1,0 +1,181 @@
+================================================================
+GENIUSTUDY ASSISTANT — SPEC 02: FEATURES & UX FLOWS
+================================================================
+
+----------------------------------------------------------------
+FEATURE GROUP 1: DOCUMENT INGESTION
+----------------------------------------------------------------
+
+F1.1 — File Upload
+  - Drag-and-drop zone accepting: .pdf, .pptx, .docx, .txt, .md
+  - Click-to-browse fallback
+  - Client-side parsing (no server processing needed for text)
+  - Progress bar while parsing large files
+  - Error handling for unsupported/corrupt files
+  - Files stored in Supabase Storage after auth
+  - Max file size: 20MB
+
+F1.2 — Paste Notes
+  - Large textarea for pasting raw text/markdown
+  - Live character count
+  - Auto-detect markdown and render appropriately
+  - "Start Studying" CTA to push to reader
+
+F1.3 — Document Management
+  - Saved documents list on Dashboard (title, type, date, word count)
+  - Rename, delete, re-open documents
+  - Favourites/pin feature
+  - Search documents by title or content snippet
+  - Sort by: recent, alphabetical, most studied
+
+----------------------------------------------------------------
+FEATURE GROUP 2: READING EXPERIENCE (Studio Page)
+----------------------------------------------------------------
+
+F2.1 — Note Reader
+  - Clean, distraction-free reading layout
+  - Fonts: Serif (reading mode) / Sans-serif (scan mode) toggle
+  - Font size control: 14px–24px slider
+  - Line height control
+  - Reading width: narrow / medium / wide
+  - Light / Dark / Sepia / Forest / Midnight themes
+  - Highlight-on-TTS: currently reading sentence highlighted
+  - Smooth scroll as TTS progresses
+
+F2.2 — Table of Contents
+  - Auto-generated from headings (H1–H3)
+  - Floating side panel (collapsible)
+  - Click to jump to section
+  - Progress indicator (% read)
+
+F2.3 — Text Highlighting & Notes
+  - User can highlight text manually (multiple colors)
+  - Right-click context menu: Highlight / Define / Explain with AI
+  - Side panel for user's own inline annotations
+
+----------------------------------------------------------------
+FEATURE GROUP 3: TEXT-TO-SPEECH (TTS)
+----------------------------------------------------------------
+
+F3.1 — TTS Engine
+  - Uses Web Speech API (SpeechSynthesis) — zero cost, browser-native
+  - Fallback: ElevenLabs API (if user provides key in settings)
+  - Reads entire document or selected text
+
+F3.2 — Voice Controls (Floating Player Bar at bottom)
+  - Play / Pause / Stop
+  - Rewind 10s / Forward 10s
+  - Speed: 0.5x – 3x (slider)
+  - Pitch: 0.5 – 2 (slider)
+  - Volume slider
+  - Keyboard shortcuts: Space (play/pause), Left/Right arrows (seek)
+
+F3.3 — Voice Selection
+  - Lists all available browser voices (filtered by language)
+  - Language selector: English, Spanish, French, etc.
+  - Voice preview button (reads sample sentence)
+  - Favourite/save preferred voice
+  - Gender filter: Male / Female / Neutral
+  - Voice categories shown: Standard / Neural / Premium
+
+F3.4 — TTS Reading UX
+  - Current sentence highlighted in reader as it is spoken
+  - Word-by-word highlight mode (optional, toggle)
+  - Auto-scroll reader to follow TTS position
+  - Click any sentence to start reading from there
+
+----------------------------------------------------------------
+FEATURE GROUP 4: AMBIENT SOUNDS
+----------------------------------------------------------------
+
+F4.1 — Sound Library
+  Categories:
+    Nature     — Rain, Thunderstorm, Ocean Waves, Forest, River
+    Study      — Lo-fi Hip Hop, Coffee Shop, Library Ambience
+    White Noise — White Noise, Brown Noise, Pink Noise
+    Focus      — Binaural Beats (Alpha, Beta, Theta), 432Hz Tone
+    Space      — Deep Space Hum, Cosmic Drift
+
+  All sounds: looped seamlessly, royalty-free or generated via
+  Tone.js / Web Audio API oscillators for noise types
+
+F4.2 — Ambient Player Controls
+  - Per-sound volume slider
+  - Mix multiple sounds simultaneously (e.g. Rain + Lo-fi)
+  - Global ambient volume
+  - "Quick Start" presets: Deep Focus / Chill Study / Power Study
+  - Sleep timer: auto-stop ambient after 30 / 60 / 90 min
+  - Crossfade when switching sounds
+
+F4.3 — Audio Visualizer (optional toggle)
+  - Subtle animated waveform or particle visualizer in background
+  - Reacts to ambient sound amplitude
+
+----------------------------------------------------------------
+FEATURE GROUP 5: AI STUDY TOOLS
+----------------------------------------------------------------
+
+F5.1 — Smart Summary
+  - One-click: "Summarize this document"
+  - Output: Key Points (bullet list) + Overview paragraph
+  - Length options: Brief / Standard / Detailed
+  - Copy to clipboard / Save as new doc
+
+F5.2 — Flashcard Generator
+  - AI generates Q&A flashcard pairs from document
+  - Spaced repetition logic (SM-2 algorithm)
+  - Flip animation on cards
+  - Mark as: Easy / Hard / Again
+  - Progress bar across deck
+  - Session summary: accuracy %, time spent
+
+F5.3 — Quiz Mode
+  - Multiple choice questions generated by AI
+  - 5 / 10 / 20 question sets
+  - Timed or untimed mode
+  - Immediate feedback per question
+  - Final score with explanations
+  - Quiz history stored in Supabase
+
+F5.4 — AI Explainer (Context Menu)
+  - Right-click any word/phrase → "Explain this"
+  - Popover with simple AI explanation
+  - "Go deeper" → opens full side panel
+
+F5.5 — Ask the Document (Chat)
+  - Chat sidebar: ask questions about the current document
+  - Claude API with document as context
+  - Conversation history per document
+
+----------------------------------------------------------------
+FEATURE GROUP 6: STUDY SESSION TRACKING
+----------------------------------------------------------------
+
+F6.1 — Session Timer
+  - Auto-starts when Studio opens
+  - Displays elapsed time
+  - Pomodoro mode: 25 min focus / 5 min break cycles
+  - Pause / resume
+
+F6.2 — Progress & Stats (Dashboard)
+  - Total study time (daily, weekly, monthly charts)
+  - Documents studied
+  - Flashcard accuracy over time
+  - Quiz scores history
+  - Study streak counter (days in a row)
+  - XP / Level system (gamification)
+
+----------------------------------------------------------------
+FEATURE GROUP 7: SETTINGS
+----------------------------------------------------------------
+
+F7.1 — Appearance: theme, font, layout width
+F7.2 — TTS: default voice, speed, pitch, highlight color
+F7.3 — Ambient: default preset, default volume
+F7.4 — AI: Claude API key input, response length preference
+F7.5 — Account: display name, avatar, email, password, delete account
+F7.6 — Keyboard Shortcuts reference panel
+
+================================================================
+END OF SPEC 02
+================================================================

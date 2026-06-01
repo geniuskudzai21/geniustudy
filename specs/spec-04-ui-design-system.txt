@@ -1,0 +1,225 @@
+================================================================
+GENIUSTUDY ASSISTANT — SPEC 04: UI DESIGN SYSTEM & COMPONENTS
+================================================================
+
+----------------------------------------------------------------
+1. DESIGN DIRECTION
+----------------------------------------------------------------
+
+Aesthetic: "Dark Academia meets Futuristic Study Pod"
+  - Rich dark backgrounds with warm amber/gold accents
+  - Clean editorial typography (serif for reading, sans for UI)
+  - Soft glows, subtle gradients, glassmorphism panels
+  - Feels like studying in a high-tech library at night
+  - NOT generic SaaS — evokes focus, depth, intelligence
+
+----------------------------------------------------------------
+2. COLOR PALETTE (CSS Variables / Tailwind Theme)
+----------------------------------------------------------------
+
+Base (Dark theme — default):
+  --background:        #0D0D0F   (near-black, warm tint)
+  --surface:           #141418   (card/panel backgrounds)
+  --surface-elevated:  #1C1C22   (modals, popovers)
+  --border:            #2A2A35   (subtle dividers)
+  --border-accent:     #3D3D55   (focused elements)
+
+Text:
+  --text-primary:      #F0EDE8   (warm off-white)
+  --text-secondary:    #9E9BA8   (muted descriptions)
+  --text-muted:        #5C5A6A   (placeholders, hints)
+
+Accent (Gold):
+  --accent:            #C9A84C   (primary CTA, active states)
+  --accent-glow:       rgba(201,168,76,0.15)
+  --accent-subtle:     #2A2310   (accent bg tint)
+
+Status:
+  --success:           #4CAF7C
+  --warning:           #E8A84C
+  --error:             #E85C5C
+  --info:              #5C8CE8
+
+Reading Themes (applied to reader panel only):
+  dark:    bg #0D0D0F  text #F0EDE8
+  light:   bg #FAF9F6  text #1A1A1A
+  sepia:   bg #F5ECD7  text #3D2B0E
+  forest:  bg #0D1A12  text #C8DEC0
+  midnight:bg #06060F  text #C0C0E8
+
+----------------------------------------------------------------
+3. TYPOGRAPHY
+----------------------------------------------------------------
+
+Display / Headings:
+  font-family: 'Playfair Display', Georgia, serif
+  Used for: page titles, document headings, section labels
+
+Body / Reader:
+  font-family: 'Lora', Georgia, serif  (reading mode)
+  font-family: 'DM Sans', sans-serif   (UI mode)
+
+Mono:
+  font-family: 'JetBrains Mono', monospace (code blocks)
+
+Load via Google Fonts:
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono&display=swap')
+
+Scale:
+  xs: 12px  sm: 14px  base: 16px  lg: 18px
+  xl: 20px  2xl: 24px  3xl: 30px  4xl: 36px
+
+----------------------------------------------------------------
+4. SHADCN/UI COMPONENT USAGE GUIDE
+----------------------------------------------------------------
+
+Components used and customization notes:
+
+Button:
+  variant="default"    → Gold accent bg (#C9A84C), dark text
+  variant="outline"    → Border accent, transparent bg
+  variant="ghost"      → Hover shows accent-subtle bg
+  variant="destructive"→ Error color
+
+Card:
+  bg: var(--surface)
+  border: var(--border)
+  border-radius: 12px
+  Elevated cards: box-shadow: 0 4px 24px rgba(0,0,0,0.4)
+
+Dialog / Sheet:
+  bg: var(--surface-elevated)
+  Backdrop: blur(8px) rgba(0,0,0,0.6)
+
+Tabs:
+  Use in Studio page for: Document / Flashcards / Quiz / Chat
+  Active tab: gold underline indicator + gold text
+
+Slider (TTS speed, pitch, volume, font size):
+  Track: var(--border)
+  Filled: var(--accent)
+  Thumb: gold circle with glow
+
+Select / Dropdown:
+  Used for: voice selection, ambient sound, language, theme
+  Custom scrollbar styled to match theme
+
+Progress:
+  Used for: document read %, flashcard deck %, quiz progress
+  Fill: gold gradient
+
+Badge:
+  Used for: file type labels, streak count, XP level
+  Variants: gold (active), muted (inactive), success, error
+
+Tooltip:
+  Used throughout for icon buttons
+  Dark surface background
+
+ScrollArea:
+  Custom thin scrollbar, accent-colored thumb
+
+Switch:
+  Used for: Pomodoro toggle, word highlight toggle, etc.
+  Active: gold
+
+----------------------------------------------------------------
+5. KEY PAGES & LAYOUT SPECS
+----------------------------------------------------------------
+
+LANDING PAGE
+  - Full-screen hero with animated particles/stars bg
+  - Logo + tagline centered
+  - Three feature highlights (TTS / Ambient / AI)
+  - CTA: "Start Studying Free"
+  - No nav clutter
+
+AUTH PAGE
+  - Split layout: left = dark background with quote/illustration
+  - Right = Card with form (email/pw) + Google OAuth button
+  - Minimal, focused
+
+DASHBOARD
+  - Left sidebar (fixed, 240px): Logo, Nav items, User avatar
+  - Main area: Welcome header + stats row + document grid
+  - Stats row: Today's time | Streak | Total docs | Level/XP
+  - Document grid: Card per doc (title, type badge, date, word count)
+
+STUDIO PAGE (Main study workspace)
+  - Left panel (optional, 240px): Table of Contents
+  - Center (flex-1): Note Reader (constrained max-width 720px)
+  - Right panel (optional, 320px): AI tools (Summary / Chat / Cards)
+  - Bottom floating bar: TTS player controls
+  - Bottom-right FAB: Ambient sound controls (expands on click)
+  - Top bar: doc title, theme switcher, font controls, share
+
+SETTINGS PAGE
+  - Vertical tabs on left
+  - Content area per tab
+
+----------------------------------------------------------------
+6. ICONS (Lucide React)
+----------------------------------------------------------------
+
+Upload area:       Upload, FileText, FilePlus
+TTS controls:      Play, Pause, Square, SkipBack, SkipForward,
+                   Volume2, VolumeX, Mic
+Ambient:           Music, Wind, CloudRain, Waves, Coffee
+AI tools:          Sparkles, Brain, BookOpen, MessageCircle,
+                   ListChecks, HelpCircle, Zap
+Navigation:        LayoutDashboard, Library, Settings, LogOut,
+                   ChevronLeft, ChevronRight
+Reading:           Type, Sun, Moon, AlignLeft, Maximize2
+Flashcards:        CreditCard, RotateCcw, Check, X
+Quiz:              ClipboardList, Trophy, Clock
+Gamification:      Flame, Star, Award, TrendingUp
+Misc:              Search, Filter, Heart, Share2, Download,
+                   Copy, Trash2, Pencil, Eye, EyeOff
+
+----------------------------------------------------------------
+7. ANIMATIONS & TRANSITIONS
+----------------------------------------------------------------
+
+Page transitions:
+  fade + slight upward translate (200ms ease)
+
+Card hover:
+  transform: translateY(-2px) + border-color accent
+  box-shadow deepens on hover
+
+TTS highlight:
+  Background pulse animation on active sentence
+  color: rgba(201,168,76,0.25) → repeating-pulse
+
+Flashcard flip:
+  CSS 3D card flip (rotateY 180deg, 400ms)
+
+Ambient visualizer:
+  Canvas-based waveform or CSS bar equalizer animation
+
+Loading states:
+  Skeleton screens (Shadcn Skeleton) for all async content
+  Shimmer effect on skeleton
+
+Sound buttons active state:
+  Subtle breathing glow: box-shadow 0 0 12px var(--accent-glow)
+
+----------------------------------------------------------------
+8. RESPONSIVE BREAKPOINTS
+----------------------------------------------------------------
+
+Mobile (< 640px):
+  - Sidebar collapses to bottom tab bar
+  - Studio panels stack vertically
+  - TTS player goes full-width
+
+Tablet (640px – 1024px):
+  - Left ToC panel hidden by default (toggle button)
+  - Right AI panel slides over as sheet
+
+Desktop (> 1024px):
+  - Full 3-panel layout as designed
+
+================================================================
+END OF SPEC 04
+================================================================

@@ -1,0 +1,250 @@
+================================================================
+GENIUSTUDY ASSISTANT — SPEC 03: SUPABASE SCHEMA & AUTH
+================================================================
+
+----------------------------------------------------------------
+1. AUTHENTICATION
+----------------------------------------------------------------
+
+Provider: Supabase Auth
+Methods:
+  - Email + Password (with email verification)
+  - Google OAuth
+
+On user creation → trigger inserts row into `profiles` table.
+
+Auth redirect URL: http://localhost:5173/auth/callback (dev)
+                   https://yourdomain.com/auth/callback (prod)
+
+RLS (Row Level Security): ENABLED on all tables.
+All queries must be scoped to auth.uid() = user_id.
+
+----------------------------------------------------------------
+2. SUPABASE STORAGE
+----------------------------------------------------------------
+
+Bucket: "study-files"
+  - Path pattern: {user_id}/{document_id}/{filename}
+  - Allowed MIME types: application/pdf, 
+      application/vnd.openxmlformats-officedocument.*,
+      text/plain, text/markdown
+  - Max file size: 20MB
+  - Bucket policy: private (authenticated users only)
+
+----------------------------------------------------------------
+3. DATABASE SCHEMA
+----------------------------------------------------------------
+
+-- ============================================================
+-- TABLE: profiles
+-- ============================================================
+CREATE TABLE profiles (
+  id            UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  username      TEXT UNIQUE,
+  display_name  TEXT,
+  avatar_url    TEXT,
+  xp            INTEGER DEFAULT 0,
+  level         INTEGER DEFAULT 1,
+  streak_days   INTEGER DEFAULT 0,
+  last_studied  DATE,
+  created_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own profile"
+  ON profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users can update own profile"
+  ON profiles FOR UPDATE USING (auth.uid() = id);
+
+-- ============================================================
+-- TABLE: documents
+-- ============================================================
+CREATE TABLE documents (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  title         TEXT NOT NULL,
+  source_type   TEXT CHECK (source_type IN ('pdf','docx','pptx','txt','paste')),
+  raw_text      TEXT,                        -- extracted plain text
+  html_content  TEXT,                        -- parsed HTML for rendering
+  word_count    INTEGER,
+  file_url      TEXT,                        -- Supabase Storage URL (if uploaded)
+  is_favourite  BOOLEAN DEFAULT FALSE,
+  created_at    TIMESTAMPTZ DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own documents"
+  ON documents FOR ALL USING (auth.uid() = user_id);
+
+-- ============================================================
+-- TABLE: user_preferences
+-- ============================================================
+CREATE TABLE user_preferences (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id         UUID REFERENCES profiles(id) ON DELETE CASCADE UNIQUE NOT NULL,
+  theme           TEXT DEFAULT 'dark',
+  font_family     TEXT DEFAULT 'serif',
+  font_size       INTEGER DEFAULT 18,
+  line_height     DECIMAL DEFAULT 1.7,
+  reading_width   TEXT DEFAULT 'medium',
+  tts_voice       TEXT,
+  tts_speed       DECIMAL DEFAULT 1.0,
+  tts_pitch       DECIMAL DEFAULT 1.0,
+  tts_volume      DECIMAL DEFAULT 1.0,
+  tts_highlight   TEXT DEFAULT 'sentence',  -- 'sentence' | 'word' | 'none'
+  ambient_preset  TEXT DEFAULT 'none',
+  ambient_volume  DECIMAL DEFAULT 0.4,
+  pomodoro_enabled BOOLEAN DEFAULT FALSE,
+  pomodoro_focus  INTEGER DEFAULT 25,
+  pomodoro_break  INTEGER DEFAULT 5,
+  updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE user_preferences ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own preferences"
+  ON user_preferences FOR ALL USING (auth.uid() = user_id);
+
+-- ============================================================
+-- TABLE: study_sessions
+-- ============================================================
+CREATE TABLE study_sessions (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  document_id   UUID REFERENCES documents(id) ON DELETE SET NULL,
+  started_at    TIMESTAMPTZ NOT NULL,
+  ended_at      TIMESTAMPTZ,
+  duration_secs INTEGER,                     -- calculated on session end
+  xp_earned     INTEGER DEFAULT 0,
+  created_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE study_sessions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own sessions"
+  ON study_sessions FOR ALL USING (auth.uid() = user_id);
+
+-- ============================================================
+-- TABLE: flashcards
+-- ============================================================
+CREATE TABLE flashcards (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id         UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  document_id     UUID REFERENCES documents(id) ON DELETE CASCADE NOT NULL,
+  question        TEXT NOT NULL,
+  answer          TEXT NOT NULL,
+  -- SM-2 spaced repetition fields
+  ease_factor     DECIMAL DEFAULT 2.5,
+  interval_days   INTEGER DEFAULT 1,
+  repetitions     INTEGER DEFAULT 0,
+  next_review     DATE DEFAULT CURRENT_DATE,
+  last_quality    INTEGER,                   -- 0–5 SM-2 quality rating
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE flashcards ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own flashcards"
+  ON flashcards FOR ALL USING (auth.uid() = user_id);
+
+-- ============================================================
+-- TABLE: quiz_results
+-- ============================================================
+CREATE TABLE quiz_results (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  document_id   UUID REFERENCES documents(id) ON DELETE CASCADE NOT NULL,
+  score         INTEGER NOT NULL,            -- correct answers count
+  total         INTEGER NOT NULL,            -- total questions
+  percentage    DECIMAL GENERATED ALWAYS AS (score::decimal / total * 100) STORED,
+  time_secs     INTEGER,                     -- time to complete quiz
+  questions     JSONB,                       -- full Q&A with user answers
+  created_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE quiz_results ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own quiz results"
+  ON quiz_results FOR ALL USING (auth.uid() = user_id);
+
+-- ============================================================
+-- TABLE: highlights
+-- ============================================================
+CREATE TABLE highlights (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  document_id   UUID REFERENCES documents(id) ON DELETE CASCADE NOT NULL,
+  text          TEXT NOT NULL,
+  color         TEXT DEFAULT 'yellow',       -- yellow | green | blue | pink
+  note          TEXT,                        -- optional annotation
+  char_start    INTEGER,                     -- character offset in raw_text
+  char_end      INTEGER,
+  created_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE highlights ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own highlights"
+  ON highlights FOR ALL USING (auth.uid() = user_id);
+
+-- ============================================================
+-- TABLE: chat_messages
+-- ============================================================
+CREATE TABLE chat_messages (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  document_id   UUID REFERENCES documents(id) ON DELETE CASCADE NOT NULL,
+  role          TEXT CHECK (role IN ('user','assistant')) NOT NULL,
+  content       TEXT NOT NULL,
+  created_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own chat"
+  ON chat_messages FOR ALL USING (auth.uid() = user_id);
+
+----------------------------------------------------------------
+4. SUPABASE FUNCTIONS (Edge Functions)
+----------------------------------------------------------------
+
+(Optional — can be handled client-side for MVP)
+
+functions/
+  generate-summary/index.ts    — Calls Claude API with doc text
+  generate-flashcards/index.ts — Returns JSON array of Q&A pairs
+  generate-quiz/index.ts       — Returns JSON array of MCQ questions
+
+Each function:
+  - Verifies Supabase JWT (Authorization header)
+  - Reads ANTHROPIC_API_KEY from env
+  - Returns streamed or JSON response
+
+----------------------------------------------------------------
+5. TRIGGERS & FUNCTIONS
+----------------------------------------------------------------
+
+-- Auto-update updated_at on documents
+CREATE OR REPLACE FUNCTION update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN NEW.updated_at = NOW(); RETURN NEW; END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER documents_updated_at
+  BEFORE UPDATE ON documents
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- Auto-create profile on auth.users insert
+CREATE OR REPLACE FUNCTION handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO profiles (id, display_name, avatar_url)
+  VALUES (NEW.id, NEW.raw_user_meta_data->>'full_name',
+          NEW.raw_user_meta_data->>'avatar_url');
+  INSERT INTO user_preferences (user_id) VALUES (NEW.id);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION handle_new_user();
+
+================================================================
+END OF SPEC 03
+================================================================

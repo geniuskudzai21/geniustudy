@@ -1,0 +1,297 @@
+================================================================
+GENIUSTUDY ASSISTANT — SPEC 05: IMPLEMENTATION PHASES & NOTES
+================================================================
+
+----------------------------------------------------------------
+PHASE 0: PROJECT SCAFFOLD (Day 1)
+----------------------------------------------------------------
+
+Commands to run:
+  npm create vite@latest geniustudy -- --template react-ts
+  cd geniustudy
+  npm install
+
+Core dependencies:
+  npm install @supabase/supabase-js
+  npm install react-router-dom
+  npm install zustand
+  npm install lucide-react
+  npm install clsx tailwind-merge
+  npm install pdfjs-dist
+  npm install mammoth
+  npm install tone                  (for Web Audio oscillators)
+
+Shadcn/UI setup:
+  npx shadcn-ui@latest init
+  npx shadcn-ui@latest add button card dialog sheet tabs slider
+    select progress badge tooltip scroll-area switch skeleton
+    separator input textarea avatar dropdown-menu
+
+Tailwind CSS:
+  npm install -D tailwindcss postcss autoprefixer
+  npx tailwindcss init -p
+  Configure tailwind.config.ts with custom colors from Spec 04
+
+Google Fonts:
+  Add @import in src/index.css
+
+Folder structure:
+  Create all folders listed in Spec 01 section 3
+
+Environment:
+  Create .env.local with Supabase + Anthropic keys
+
+----------------------------------------------------------------
+PHASE 1: AUTH & SUPABASE (Days 1–2)
+----------------------------------------------------------------
+
+1. Initialize Supabase client in /src/lib/supabase.ts
+2. Create all tables in Supabase dashboard (SQL from Spec 03)
+3. Enable RLS and apply policies (SQL from Spec 03)
+4. Create Supabase Storage bucket "study-files"
+5. Build Auth page:
+   - Email/password signup & login forms (Shadcn Input + Button)
+   - Google OAuth button
+   - Error handling, loading states
+6. Auth context/hook: useAuth() — exposes user, session, signOut
+7. Protected route wrapper component
+8. Auto-create profile trigger (SQL from Spec 03)
+9. Test: sign up, sign in, sign out, Google OAuth
+
+----------------------------------------------------------------
+PHASE 2: DOCUMENT INGESTION (Days 2–3)
+----------------------------------------------------------------
+
+1. Build FileUploader component:
+   - Drag-and-drop using HTML5 drag events (no library needed)
+   - Input[type=file] fallback
+   - File type validation + size check
+   - Upload to Supabase Storage → get public URL
+
+2. Build file parsers in /src/lib/fileParser.ts:
+   PDF:  Use pdfjs-dist getDocument() → iterate pages → getText()
+   DOCX: Use mammoth.extractRawText() → returns { value: string }
+   PPTX: Parse PPTX as zip (JSZip), extract slide XML, parse text nodes
+   TXT:  FileReader.readAsText()
+   All return: { title: string, rawText: string, htmlContent: string }
+
+3. Build PasteNotes component:
+   - Textarea with live word count
+   - Detect markdown headings → set title from first H1
+
+4. After parsing: insert row into `documents` table with parsed data
+
+5. Redirect to Studio page with document ID
+
+----------------------------------------------------------------
+PHASE 3: READER (Days 3–4)
+----------------------------------------------------------------
+
+1. Load document from Supabase by ID
+2. Render htmlContent in NoteReader with prose styling
+3. Build ReaderToolbar:
+   - Font family toggle (serif / sans)
+   - Font size slider (Shadcn Slider → CSS variable)
+   - Line height slider
+   - Reading width select (narrow / medium / wide → max-width)
+   - Theme switcher (5 themes → CSS class on reader wrapper)
+4. Build TableOfContents:
+   - Parse H1–H3 from htmlContent
+   - Sticky side panel with smooth scroll links
+   - Scroll spy to highlight active section
+5. Text highlighting:
+   - mouseup event → getSelection() → store range
+   - Context menu (Radix ContextMenu) with color options
+   - Save to `highlights` table
+   - Re-apply highlights on load
+
+----------------------------------------------------------------
+PHASE 4: TEXT-TO-SPEECH (Days 4–5)
+----------------------------------------------------------------
+
+1. Implement useTextToSpeech hook:
+   - window.speechSynthesis API
+   - States: utterance, isPlaying, currentWordIndex, speed, pitch, volume
+   - Functions: play(), pause(), stop(), seek(charIndex), setSpeed(), setPitch()
+   - Split document text into sentences (use regex or Intl.Segmenter)
+   - Track current sentence index
+
+2. Build TTSController (floating bottom bar):
+   - Play/Pause/Stop buttons (Lucide icons)
+   - Speed and pitch sliders (Shadcn Slider)
+   - Volume slider
+   - Current position indicator
+   - Keyboard shortcut: Space = play/pause
+
+3. Build VoiceSelector:
+   - Load window.speechSynthesis.getVoices()
+   - Filter by language (Select dropdown)
+   - Voice preview button
+   - Save selected voice to user_preferences
+
+4. Highlight current sentence in reader:
+   - Wrap each sentence in <span data-sentence-index="N">
+   - On sentence change → add .tts-active class
+   - CSS: .tts-active { background: rgba(201,168,76,0.25); }
+   - Auto-scroll reader to active sentence
+
+----------------------------------------------------------------
+PHASE 5: AMBIENT SOUNDS (Days 5–6)
+----------------------------------------------------------------
+
+1. Sound assets strategy:
+   - Nature sounds: use free CC0 loops from freesound.org or
+     generate with Tone.js (preferred — no file hosting needed)
+   - Lo-fi beats: short royalty-free loops (host in Supabase Storage)
+   - Noise types: generate programmatically with Web Audio API
+   - Binaural beats: generate with Tone.js oscillators
+
+2. Implement useAmbientAudio hook:
+   - AudioContext with gain nodes per sound
+   - Load/decode audio buffers, loop seamlessly
+   - Per-sound volume control
+   - Global volume control
+   - Mix multiple sounds simultaneously (separate AudioBufferSourceNodes)
+   - Crossfade on switch (ramp gain up/down over 500ms)
+
+3. Build AmbientPlayer (bottom-right expandable panel):
+   - FAB button (Music icon) → expands to panel
+   - Grid of sound tiles (icon + label + active indicator)
+   - Active sounds show animated glow
+   - Per-active-sound volume mini-slider
+   - Preset buttons: Deep Focus / Chill Study / Power Study
+   - Sleep timer select
+
+4. Sound categories and Tone.js implementations:
+   White Noise: Tone.Noise('white').connect(gain)
+   Pink Noise:  Tone.Noise('pink').connect(gain)
+   Brown Noise: Tone.Noise('brown').connect(gain)
+   Binaural (Alpha 10Hz):
+     Left:  Tone.Oscillator(200, 'sine')
+     Right: Tone.Oscillator(210, 'sine')
+     Pan each to L/R channel with Tone.Panner
+
+----------------------------------------------------------------
+PHASE 6: AI FEATURES (Days 6–8)
+----------------------------------------------------------------
+
+1. Implement useAI hook:
+   - Claude API calls via fetch to /v1/messages
+   - API key from env or user_preferences
+   - Stream responses (SSE) for long outputs
+
+2. Summary Panel:
+   - Button → calls Claude with: system prompt + document rawText
+   - System: "You are a study assistant. Return a JSON with:
+     { overview: string, keyPoints: string[], difficulty: string }"
+   - Render overview + bullet key points
+   - Save to document metadata
+
+3. Flashcard Generator:
+   - Calls Claude: returns JSON array
+     [{ question: string, answer: string }]
+   - Insert into `flashcards` table
+   - Build FlashcardDeck component:
+     - 3D CSS flip card (front = Q, back = A)
+     - SM-2 buttons: Easy / Hard / Again
+     - Update ease_factor, interval, next_review per SM-2 algorithm
+     - Progress bar
+
+4. Quiz Mode:
+   - Calls Claude: returns JSON array
+     [{ question: string, options: string[], correct: number, explanation: string }]
+   - Multiple choice UI with keyboard shortcuts (A/B/C/D)
+   - Timer per question (optional)
+   - Score + review screen
+   - Save to quiz_results table
+
+5. Ask the Document (Chat):
+   - Right panel chat UI (messages list + input)
+   - System prompt includes: full document rawText (or chunks if large)
+   - Store messages in chat_messages table
+   - Streaming response (typewriter effect)
+
+6. AI Explainer (Context Menu):
+   - On text selection right-click → "Explain with AI"
+   - Popover with streaming explanation
+   - "Deeper" button → opens full chat pre-filled with question
+
+----------------------------------------------------------------
+PHASE 7: DASHBOARD & GAMIFICATION (Day 8–9)
+----------------------------------------------------------------
+
+1. Study Session Tracking:
+   - useStudySession hook: start timer on Studio open, end on leave
+   - Insert into study_sessions on session end
+   - Calculate XP earned (1 XP per minute studied)
+   - Update profiles.xp, profiles.last_studied, profiles.streak_days
+
+2. Dashboard Stats:
+   - Total time today/week/month (aggregate query)
+   - Recharts LineChart for study time trend
+   - Streak counter (check last_studied vs today)
+   - XP progress bar to next level (level = floor(xp/100))
+
+3. Gamification:
+   - Level thresholds: every 100 XP = 1 level
+   - Level badges: Novice (1–5) / Scholar (6–15) / Expert (16–30) / Genius (31+)
+   - Achievement toasts: "7-day streak! 🔥" etc.
+
+4. Document Grid:
+   - Fetch all user documents
+   - Filter: All / PDF / DOCX / Pasted
+   - Search bar (client-side filter)
+   - Sort by recent / A-Z / most studied
+
+----------------------------------------------------------------
+PHASE 8: SETTINGS & POLISH (Days 9–10)
+----------------------------------------------------------------
+
+1. Settings page (Tabs: Appearance / TTS / Ambient / AI / Account)
+2. Load from / save to user_preferences table
+3. Apply preferences on app load via Zustand store
+4. Keyboard shortcuts implementation + reference panel
+5. Responsive layout adjustments (see Spec 04 section 8)
+6. Loading skeletons for all async states
+7. Error boundary components
+8. Empty states (no documents, no flashcards, etc.)
+9. Onboarding flow for new users (3-step modal)
+10. PWA manifest + service worker for offline reading
+
+----------------------------------------------------------------
+TECHNICAL NOTES & GOTCHAS
+----------------------------------------------------------------
+
+PDF parsing:
+  pdfjs-dist requires a worker. Import workerSrc:
+  import * as pdfjsLib from 'pdfjs-dist'
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 
+    `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+
+PPTX parsing (no great npm library):
+  Option A: Use JSZip to unzip the .pptx, then parse slide XML with DOMParser
+  Option B: Send to Claude API with file content as base64 and ask it to extract text
+  Option C: Supabase Edge Function calling LibreOffice headless
+
+Web Speech API gotcha:
+  getVoices() is async in Chrome. Listen to 'voiceschanged' event:
+  window.speechSynthesis.addEventListener('voiceschanged', loadVoices)
+
+Audio Context policy:
+  AudioContext must be created after user gesture (click).
+  Lazy-init AudioContext on first play button press.
+
+Claude API from browser:
+  Include API key in request headers. For production, proxy through
+  a Supabase Edge Function to hide the key from client.
+
+Supabase realtime (optional stretch):
+  Could use Realtime to sync highlights/notes across devices.
+
+Large documents:
+  If rawText > ~100k chars, chunk before sending to Claude.
+  Use a sliding window approach or summarize in segments.
+
+================================================================
+END OF SPEC 05
+================================================================

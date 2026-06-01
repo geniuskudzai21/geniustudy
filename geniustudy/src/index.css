@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #0D0D0F;
+  --color-surface: #141418;
+  --color-surface-elevated: #1C1C22;
+  --color-border: #2A2A35;
+  --color-border-accent: #3D3D55;
+  --color-text-primary: #F0EDE8;
+  --color-text-secondary: #9E9BA8;
+  --color-text-muted: #5C5A6A;
+  --color-accent: #C9A84C;
+  --color-accent-glow: rgba(201, 168, 76, 0.15);
+  --color-accent-subtle: #2A2310;
+  --color-success: #4CAF7C;
+  --color-warning: #E8A84C;
+  --color-error: #E85C5C;
+  --color-info: #5C8CE8;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-serif: 'Lora', Georgia, serif;
+  --font-sans: 'DM Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+body {
+  margin: 0;
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.reader-theme-dark { background: #0D0D0F; color: #F0EDE8; }
+.reader-theme-light { background: #FAF9F6; color: #1A1A1A; }
+.reader-theme-sepia { background: #F5ECD7; color: #3D2B0E; }
+.reader-theme-forest { background: #0D1A12; color: #C8DEC0; }
+.reader-theme-midnight { background: #06060F; color: #C0C0E8; }
+
+.tts-active {
+  background: rgba(201, 168, 76, 0.25);
+  border-radius: 2px;
+  transition: background 0.2s;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px var(--color-accent-glow); }
+  50% { box-shadow: 0 0 20px var(--color-accent-glow); }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 200ms ease-out;
+}
+
+.flashcard-flip {
+  perspective: 1000px;
+}
+
+.flashcard-inner {
+  transition: transform 0.4s;
+  transform-style: preserve-3d;
+}
+
+.flashcard-inner.flipped {
+  transform: rotateY(180deg);
+}
+
+.flashcard-front, .flashcard-back {
+  backface-visibility: hidden;
+  position: absolute;
+  inset: 0;
+}
+
+.flashcard-back {
+  transform: rotateY(180deg);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-accent);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent);
+}
