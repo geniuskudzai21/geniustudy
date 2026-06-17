@@ -1,80 +1,102 @@
-const API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || ''
-const API_URL = 'https://api.anthropic.com/v1/messages'
+const API_KEY = import.meta.env.VITE_GROQ_API_KEY || ''
+const BASE_URL = 'https://api.groq.com/openai/v1/chat/completions'
+const MODEL = 'llama-3.3-70b-versatile'
 
-async function callClaude(systemPrompt: string, userMessage: string): Promise<string> {
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': API_KEY,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: 'claude-3-haiku-20240307',
-      max_tokens: 4096,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userMessage }],
-    }),
-  })
+async function callGroq(systemPrompt: string, userMessage: string, retries = 3): Promise<string> {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    const res = await fetch(BASE_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage },
+        ],
+      }),
+    })
 
-  if (!res.ok) {
-    const err = await res.text()
-    throw new Error(`Claude API error: ${err}`)
+    if (res.status === 429 && attempt < retries - 1) {
+      const delay = 2000 * Math.pow(2, attempt)
+      await new Promise(r => setTimeout(r, delay))
+      continue
+    }
+
+    if (!res.ok) {
+      const err = await res.text()
+      throw new Error(`Groq API error (${res.status}): ${err}`)
+    }
+
+    const data = await res.json()
+    return data.choices[0].message.content
   }
 
-  const data = await res.json()
-  return data.content[0].text
+  throw new Error('Groq API: exhausted retries')
 }
 
 export async function generateSummary(text: string, length: 'brief' | 'standard' | 'detailed' = 'standard') {
   const lengthMap = { brief: '2-3', standard: '5-7', detailed: '10-15' }
   const sys = `You are a study assistant. Return a JSON object with: { "overview": string, "keyPoints": string[], "difficulty": "easy" | "medium" | "hard" }. Keep overview to ${lengthMap[length]} sentences.`
-  const raw = await callClaude(sys, `Summarize the following study material:\n\n${text.slice(0, 50000)}`)
-  return JSON.parse(raw)
+  const raw = await callGroq(sys, `Summarize the following study material:\n\n${text.slice(0, 50000)}`)
+  const cleaned = raw.replace(/```json\s*|\s*```/g, '')
+  return JSON.parse(cleaned)
 }
 
 export async function generateFlashcards(text: string, count: number = 10) {
   const sys = `You are a study assistant. Return a JSON array of ${count} objects with: { "question": string, "answer": string }. Questions should test understanding, not just recall.`
-  const raw = await callClaude(sys, `Generate ${count} flashcards from this material:\n\n${text.slice(0, 50000)}`)
-  return JSON.parse(raw)
+  const raw = await callGroq(sys, `Generate ${count} flashcards from this material:\n\n${text.slice(0, 50000)}`)
+  const cleaned = raw.replace(/```json\s*|\s*```/g, '')
+  return JSON.parse(cleaned)
 }
 
 export async function generateQuiz(text: string, count: number = 5) {
   const sys = `You are a study assistant. Return a JSON array of ${count} objects with: { "question": string, "options": string[], "correct": number (index of correct answer), "explanation": string }.`
-  const raw = await callClaude(sys, `Generate a ${count}-question multiple choice quiz from this material:\n\n${text.slice(0, 50000)}`)
-  return JSON.parse(raw)
+  const raw = await callGroq(sys, `Generate a ${count}-question multiple choice quiz from this material:\n\n${text.slice(0, 50000)}`)
+  const cleaned = raw.replace(/```json\s*|\s*```/g, '')
+  return JSON.parse(cleaned)
 }
 
 export async function askDocument(text: string, question: string, history: { role: string; content: string }[] = []) {
   const sys = `You are a study assistant. Answer questions based solely on the provided document. If the answer isn't in the document, say so.`
-  const messages = history.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }))
-  messages.unshift({ role: 'user', content: `Document:\n${text.slice(0, 50000)}` })
+  const messages = [
+    { role: 'system', content: sys },
+    { role: 'user', content: `Document:\n${text.slice(0, 50000)}` },
+    ...history.map(m => ({ role: m.role, content: m.content })),
+    { role: 'user', content: question },
+  ]
 
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': API_KEY,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: 'claude-3-haiku-20240307',
-      max_tokens: 4096,
-      system: sys,
-      messages: [...messages, { role: 'user', content: question }],
-    }),
-  })
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await fetch(BASE_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`,
+      },
+      body: JSON.stringify({ model: MODEL, messages }),
+    })
 
-  if (!res.ok) {
-    const err = await res.text()
-    throw new Error(`Claude API error: ${err}`)
+    if (res.status === 429 && attempt < 2) {
+      const delay = 2000 * Math.pow(2, attempt)
+      await new Promise(r => setTimeout(r, delay))
+      continue
+    }
+
+    if (!res.ok) {
+      const err = await res.text()
+      throw new Error(`Groq API error (${res.status}): ${err}`)
+    }
+
+    const data = await res.json()
+    return data.choices[0].message.content
   }
 
-  const data = await res.json()
-  return data.content[0].text
+  throw new Error('Groq API: exhausted retries')
 }
 
 export async function explainText(text: string, selectedText: string) {
   const sys = `You are a study assistant. Explain the given concept simply and concisely in 2-3 sentences.`
-  return callClaude(sys, `Context:\n${text.slice(0, 50000)}\n\nExplain this: "${selectedText}"`)
+  return callGroq(sys, `Context:\n${text.slice(0, 50000)}\n\nExplain this: "${selectedText}"`)
 }
