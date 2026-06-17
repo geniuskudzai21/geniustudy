@@ -10,17 +10,28 @@ export function Auth() {
   const [isSignUp, setIsSignUp] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
+    setMessage(null)
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({ email, password })
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+        })
         if (error) throw error
-        navigate('/app/dashboard')
+
+        if (data.session) {
+          navigate('/app/dashboard')
+        } else {
+          setMessage('Account created! Check your email to confirm your account before signing in.')
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
@@ -84,6 +95,9 @@ export function Auth() {
               />
             </div>
 
+            {message && (
+              <p className="text-sm text-accent">{message}</p>
+            )}
             {error && (
               <p className="text-sm text-error">{error}</p>
             )}

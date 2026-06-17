@@ -22,7 +22,7 @@ export async function loadAudioBuffer(url: string): Promise<AudioBuffer> {
   return audioBuffer
 }
 
-export function createNoiseNode(type: 'white' | 'pink' | 'brown'): AudioNode {
+export function createNoiseNode(type: 'white' | 'pink' | 'brown'): AudioBufferSourceNode {
   const ctx = getAudioContext()
   const bufferSize = ctx.sampleRate * 2
   const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)

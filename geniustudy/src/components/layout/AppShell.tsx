@@ -31,12 +31,33 @@ export function AppShell() {
   }, [])
 
   async function loadProfile(userId: string) {
-    const { data } = await supabase
+    const { data: existing, error: selectError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single()
-    if (data) setUser(data)
+
+    if (existing) {
+      setUser(existing)
+      return
+    }
+
+    if (selectError && selectError.code !== 'PGRST116') {
+      console.error('Profile select error:', selectError)
+    }
+
+    const { data: newProfile, error: insertError } = await supabase
+      .from('profiles')
+      .insert({ id: userId })
+      .select()
+      .single()
+
+    if (insertError) {
+      console.error('Profile insert error:', insertError)
+      return
+    }
+
+    if (newProfile) setUser(newProfile)
   }
 
   useEffect(() => {

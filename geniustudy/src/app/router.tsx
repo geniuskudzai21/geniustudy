@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { Landing } from '@/pages/Landing'
 import { Auth } from '@/pages/Auth'
+import { AuthCallback } from '@/pages/AuthCallback'
 import { Dashboard } from '@/pages/Dashboard'
 import { Studio } from '@/pages/Studio'
 import { Settings } from '@/pages/Settings'
@@ -14,6 +15,10 @@ export const router = createBrowserRouter([
   {
     path: '/auth',
     element: <Auth />,
+  },
+  {
+    path: '/auth/callback',
+    element: <AuthCallback />,
   },
   {
     path: '/app',

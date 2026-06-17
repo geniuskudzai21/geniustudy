@@ -4,7 +4,7 @@ import type { AmbientSound } from '@/types'
 
 type ActiveSource = {
   id: string
-  source: AudioBufferSourceNode | OscillatorNode
+  source: AudioScheduledSourceNode
   gain: GainNode
   type: 'buffer' | 'noise' | 'oscillator' | 'binaural'
   nodes?: { left: OscillatorNode; right: OscillatorNode; gain: GainNode }
@@ -45,7 +45,7 @@ export function useAmbientAudio() {
     gain.gain.value = sound.volume
     gain.connect(masterGain.current || ctx.destination)
 
-    let source: AudioBufferSourceNode | OscillatorNode
+    let source: AudioScheduledSourceNode | null = null
     let type: 'buffer' | 'noise' | 'oscillator' | 'binaural'
 
     if (sound.id === 'white-noise' || sound.id === 'pink-noise' || sound.id === 'brown-noise') {
@@ -71,6 +71,8 @@ export function useAmbientAudio() {
       source.start()
       type = 'oscillator'
     }
+
+    if (!source) return
 
     const entry: ActiveSource = { id: sound.id, source, gain, type }
     activeSources.current.set(sound.id, entry)
