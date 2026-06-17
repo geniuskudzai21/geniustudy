@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAppStore } from '@/store/useAppStore'
@@ -9,28 +9,7 @@ export function AppShell() {
   const navigate = useNavigate()
   const { user, setUser, sidebarOpen, preferences } = useAppStore()
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        navigate('/auth')
-      } else {
-        loadProfile(session.user.id)
-      }
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) {
-        setUser(null)
-        navigate('/auth')
-      } else {
-        loadProfile(session.user.id)
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  async function loadProfile(userId: string) {
+  const loadProfile = useCallback(async (userId: string) => {
     const { data: existing, error: selectError } = await supabase
       .from('profiles')
       .select('*')
@@ -58,7 +37,28 @@ export function AppShell() {
     }
 
     if (newProfile) setUser(newProfile)
-  }
+  }, [setUser])
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        navigate('/auth')
+      } else {
+        loadProfile(session.user.id)
+      }
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        setUser(null)
+        navigate('/auth')
+      } else {
+        loadProfile(session.user.id)
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [loadProfile, navigate, setUser])
 
   useEffect(() => {
     const root = document.documentElement

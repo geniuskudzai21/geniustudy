@@ -9,7 +9,7 @@ export function TopBar() {
   } = useAppStore()
 
   const toggleTheme = () => {
-    const themes = ['dark', 'light', 'sepia', 'forest', 'midnight'] as const
+    const themes: Array<typeof readingTheme> = ['dark', 'light', 'sepia', 'forest', 'midnight']
     const idx = themes.indexOf(readingTheme)
     setReadingTheme(themes[(idx + 1) % themes.length])
   }

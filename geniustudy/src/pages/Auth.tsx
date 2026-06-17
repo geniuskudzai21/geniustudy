@@ -20,10 +20,14 @@ export function Auth() {
 
     try {
       if (isSignUp) {
+        const redirectTo = import.meta.env.VITE_SITE_URL
+          ? `${import.meta.env.VITE_SITE_URL}/auth/callback`
+          : `${window.location.origin}/auth/callback`
+
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+          options: { emailRedirectTo: redirectTo },
         })
         if (error) throw error
 

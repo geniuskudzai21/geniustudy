@@ -12,7 +12,7 @@ import {
 import { cn } from '@/lib/utils'
 
 export function Sidebar() {
-  const { setUser, sidebarOpen, setSidebarOpen } = useAppStore()
+  const { setUser, setSidebarOpen } = useAppStore()
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()

@@ -69,7 +69,7 @@ export function Studio() {
       )}
 
       <div className="flex-1 flex flex-col min-w-0">
-        <ReaderToolbar tts={tts} />
+        <ReaderToolbar />
 
         <div className={`flex-1 overflow-auto ${readingTheme ? `reader-theme-${readingTheme}` : ''}`}>
           <div className="mx-auto py-8 px-4" style={{
